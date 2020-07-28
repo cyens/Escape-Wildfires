@@ -1,3 +1,3 @@
-# Escape-Wildfires Platform
+## About the *Escape Wildfires* Platform
 
 ![System architecture diagram](SystemArchitecture.png)
