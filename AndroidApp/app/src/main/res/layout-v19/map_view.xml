@@ -233,7 +233,7 @@
             android:contentDescription="@string/content_description_location_button"
             android:gravity="center"
             android:src="@drawable/location_icon_20db"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/emergency_map"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.75" />
@@ -283,17 +283,15 @@
             app:layout_constraintBaseline_toBaselineOf="@+id/start_nav"
             app:layout_constraintEnd_toStartOf="@+id/start_nav"
             app:layout_constraintStart_toStartOf="parent" />
+        <Button
+            android:id="@+id/emergency_map"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
+            android:text="@string/emergency_call"
+            app:layout_constraintBottom_toTopOf="@+id/start_nav"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textColor="@color/emergencyColor"/>
     </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-
-
-
-
-
-
-
-
-
-
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -5,4 +5,5 @@
     <string name="content_description_location_button">Center map on current location</string>
     <string name="content_description_zoom_in">Zoom in</string>
     <string name="content_description_zoom_out">Zoom out</string>
+    <string name="emergency_call">Emergency</string>
 </resources>
