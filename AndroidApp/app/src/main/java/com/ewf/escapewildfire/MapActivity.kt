@@ -502,19 +502,46 @@ class MapActivity : AppCompatActivity() {
         }
     }
 
-    fun startPhoneCall(){
+    /**
+     * Dials a phone call to the emergency number associated with the location the user is at
+     */
+    private fun startPhoneCall(){
+        //check if the country was found
         if (country != null) {
             val number = emergencyMap[country!!]
+            //check if a number was found
             if (number != null) {
+                //dial a phone call to the fire emergency number
                 val uri = Uri.fromParts("tel", number.getFire(), null)
                 val intent = Intent(Intent.ACTION_DIAL, uri)
                 startActivity(intent)
             } else {
-                TODO()
+                //place an empty phone call in case no emergency number could be found and notify the user
+                Toast.makeText(
+                    applicationContext,
+                    "unable to retrieve emergency number",
+                    Toast.LENGTH_LONG
+                ).show()
+                emptyPhoneCall()
             }
         } else {
-            TODO()
+            //place an empty phone call in case no country was found and notify the user
+            Toast.makeText(
+                applicationContext,
+                "Unable to obtain your location for getting the emergency number",
+                Toast.LENGTH_LONG
+            ).show()
+            emptyPhoneCall()
         }
+    }
+
+    /**
+     * Dials a blank phone call, to use when no emergency number can be obtained
+     */
+    private fun emptyPhoneCall() {
+        val uri = Uri.fromParts("tel", "", null)
+        val intent = Intent(Intent.ACTION_DIAL, uri)
+        startActivity(intent)
     }
 
     /**
