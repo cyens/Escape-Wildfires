@@ -233,7 +233,7 @@
             android:contentDescription="@string/content_description_location_button"
             android:gravity="center"
             android:src="@drawable/location_icon_20db"
-            app:layout_constraintBottom_toTopOf="@+id/emergency_map"
+            app:layout_constraintBottom_toTopOf="@+id/emergency_call"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.75" />
@@ -284,7 +284,7 @@
             app:layout_constraintEnd_toStartOf="@+id/start_nav"
             app:layout_constraintStart_toStartOf="parent" />
         <Button
-            android:id="@+id/emergency_map"
+            android:id="@+id/emergency_call"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"

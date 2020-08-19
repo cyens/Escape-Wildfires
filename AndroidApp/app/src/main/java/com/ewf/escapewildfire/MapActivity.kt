@@ -1,9 +1,11 @@
 package com.ewf.escapewildfire
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.PointF
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -18,11 +20,13 @@ import com.here.android.mpa.routing.*
 import com.here.android.mpa.search.*
 import com.here.android.mpa.search.Location
 import kotlinx.android.synthetic.main.map_view.*
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import java.lang.Math.toDegrees
 import java.lang.Math.toRadians
-import kotlin.math.*
 import java.lang.ref.WeakReference
-import kotlin.math.roundToInt
+import kotlin.math.*
+
 
 class MapActivity : AppCompatActivity() {
     private val layoutId = R.layout.map_view
@@ -50,6 +54,8 @@ class MapActivity : AppCompatActivity() {
     private var destination: GeoCoordinate? = null
     private var latestPosition:GeoCoordinate? = null
 
+    private var country: String? = null
+    private var emergencyMap = HashMap<String, EmergencyNumber>()
     /*
      * Listeners
      */
@@ -61,7 +67,8 @@ class MapActivity : AppCompatActivity() {
         PositioningManager.OnPositionChangedListener {
         override fun onPositionUpdated(
             method: PositioningManager.LocationMethod,
-            position: GeoPosition?, isMapMatched: Boolean) {
+            position: GeoPosition?, isMapMatched: Boolean
+        ) {
             latestPosition = position?.coordinate
             if (map != null && !map!!.positionIndicator.isVisible) {
                 //turn on the position indicator
@@ -78,26 +85,45 @@ class MapActivity : AppCompatActivity() {
                         )
                     }
                     LocationState.MOVING_TO_CENTERED -> {
-                        if (map!!.zoomLevel == zoomLevel){
+                        if (map!!.zoomLevel == zoomLevel) {
                             locationState = LocationState.LOCATION_CENTERED
                         }
                     }
                 }
             }
+
+            if (country == null && latestPosition != null) {
+                ReverseGeocodeRequest(latestPosition!!).execute(countryCodeReverGeocodeListener)
+            }
         }
 
         override fun onPositionFixChanged(
             method: PositioningManager.LocationMethod,
-            status: PositioningManager.LocationStatus) {
-            Log.d("status",status.toString())
-            Log.d("method",method.toString())
+            status: PositioningManager.LocationStatus
+        ) {
+            Log.d("status", status.toString())
+            Log.d("method", method.toString())
             if (status != PositioningManager.LocationStatus.AVAILABLE) {
-                Toast.makeText(applicationContext,"lost ${method.name} fix",Toast.LENGTH_SHORT).show()
+                Toast.makeText(applicationContext, "lost ${method.name} fix", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(applicationContext,"acquired ${method.name} fix",Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    applicationContext,
+                    "acquired ${method.name} fix",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
+
+    private val countryCodeReverGeocodeListener: ResultListener<Location> =
+        ResultListener<Location> { data, error ->
+            if (error == ErrorCode.NONE) {
+                country = data?.address?.countryCode
+                Log.d("code", country)
+            } else {
+                TODO()
+            }
+        }
 
     /**
      * listener to listen to the gestures made on the map. some are overridden to add extra functionality
@@ -152,10 +178,18 @@ class MapActivity : AppCompatActivity() {
                     //set the nav button text
                     start_nav.text = START_NAVIGATION_TEXT
                 } else {
-                    Toast.makeText(applicationContext,"Error:route results returned is not valid",Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        applicationContext,
+                        "Error:route results returned is not valid",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             } else {
-                Toast.makeText(applicationContext,"Error:route calculation returned error code: $error",Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    applicationContext,
+                    "Error:route calculation returned error code: $error",
+                    Toast.LENGTH_LONG
+                ).show()
                 Log.e("route calc", error.toString())
             }
         }
@@ -175,7 +209,7 @@ class MapActivity : AppCompatActivity() {
             if (nextManeuver != null) {
                 if (nextManeuver.action === Maneuver.Action.END) {
                     // notify the user that the route is complete
-                    Toast.makeText(applicationContext,"Navigation complete",Toast.LENGTH_LONG).show()
+                    Toast.makeText(applicationContext, "Navigation complete", Toast.LENGTH_LONG).show()
                     navManager?.stop()
                     if (currentRoute != null) {
                         map?.removeMapObject(currentRoute!!)
@@ -184,7 +218,7 @@ class MapActivity : AppCompatActivity() {
                 }
             }
             //set the navigation icon
-            setManeuverInfo(nextManeuver,maneuverAfterNext)
+            setManeuverInfo(nextManeuver, maneuverAfterNext)
         }
     }
 
@@ -246,14 +280,16 @@ class MapActivity : AppCompatActivity() {
     /**
      * Listener to respond when the map engine has finished initializing.
      */
-    private val engineListener: OnEngineInitListener = OnEngineInitListener {
-            error: OnEngineInitListener.Error? ->
+    private val engineListener: OnEngineInitListener = OnEngineInitListener { error: OnEngineInitListener.Error? ->
         if (error == OnEngineInitListener.Error.NONE) {
             // retrieve a reference of the map from the map fragment
             map = mapFragment!!.map
             positioningManager = PositioningManager.getInstance()
             if (positioningManager != null) {
-                map?.setCenter(positioningManager!!.lastKnownPosition.coordinate,Map.Animation.NONE)
+                map?.setCenter(
+                    positioningManager!!.lastKnownPosition.coordinate,
+                    Map.Animation.NONE
+                )
                 //start position manager
                 positioningManager!!.start(PositioningManager.LocationMethod.GPS_NETWORK_INDOOR)
 
@@ -281,8 +317,11 @@ class MapActivity : AppCompatActivity() {
 
             //create the image for the destination marker
             img = Image()
-            var bitmap = BitmapFactory.decodeResource(resources,R.mipmap.location_marker_foreground)
-            bitmap = Bitmap.createScaledBitmap(bitmap,150,150,true)
+            var bitmap = BitmapFactory.decodeResource(
+                resources,
+                R.mipmap.location_marker_foreground
+            )
+            bitmap = Bitmap.createScaledBitmap(bitmap, 150, 150, true)
             img?.setBitmap(bitmap)
         } else {
             Log.e(error.toString(), "Cannot initialize Map Fragment")
@@ -319,6 +358,8 @@ class MapActivity : AppCompatActivity() {
 
         //setup the buttons
         buttonSetup()
+
+        loadCodes()
     }
 
     /**
@@ -340,24 +381,24 @@ class MapActivity : AppCompatActivity() {
         nextTurnShape.post {
             val width = nextTurnShape.measuredWidth
             val height = nextTurnShape.measuredHeight
-            Log.d("dimensions","$width         $height")
-            val painter = NavigateUIPainter(Color.argb(255,220,220,220))
-            nextTurnShape.addView(CustomPainter(this,width, height,painter))
+            Log.d("dimensions", "$width         $height")
+            val painter = NavigateUIPainter(Color.argb(255, 220, 220, 220))
+            nextTurnShape.addView(CustomPainter(this, width, height, painter))
         }
 
         afterNextTurnShape.post {
             val width = afterNextTurnShape.measuredWidth
             val height = afterNextTurnShape.measuredHeight
-            Log.d("dimensions","$width         $height")
-            val painter = NavigateUIPainter(Color.argb(255,192,192,192))
-            afterNextTurnShape.addView(CustomPainter(this,width, height,painter))
+            Log.d("dimensions", "$width         $height")
+            val painter = NavigateUIPainter(Color.argb(255, 192, 192, 192))
+            afterNextTurnShape.addView(CustomPainter(this, width, height, painter))
         }
 
         directionalShape.post {
             val width = directionalShape.measuredWidth
             val height = directionalShape.measuredHeight
-            val painter = DirectionalUIPainter(Color.argb(255,220,220,220))
-            directionalShape.addView(CustomPainter(this,width,height,painter))
+            val painter = DirectionalUIPainter(Color.argb(255, 220, 220, 220))
+            directionalShape.addView(CustomPainter(this, width, height, painter))
         }
 
         /*
@@ -437,8 +478,42 @@ class MapActivity : AppCompatActivity() {
             }
 
             if (bounding != null && map != null) {
-                zoomToBoundingBox(bounding,map!!.orientation)
+                zoomToBoundingBox(bounding, map!!.orientation)
             }
+        }
+
+        emergency_call.setOnClickListener {
+            startPhoneCall()
+        }
+    }
+
+    /**
+     * Imports the ISO Alpha-3 country code and their corresponding emergency phone numbers into
+     * a hashmap mapping the country code to the phone number.
+     */
+    private fun loadCodes() {
+        val reader = BufferedReader(InputStreamReader(resources.openRawResource(R.raw.ccen)))
+        val data = reader.readLines()
+        for (element in data) {
+            val numbers = element.split(";")
+            if (numbers.size == 4 && numbers[0].toLowerCase() != "country") {
+                emergencyMap[numbers[0]] = EmergencyNumber(numbers[1], numbers[2], numbers[3])
+            }
+        }
+    }
+
+    fun startPhoneCall(){
+        if (country != null) {
+            val number = emergencyMap[country!!]
+            if (number != null) {
+                val uri = Uri.fromParts("tel", number.getFire(), null)
+                val intent = Intent(Intent.ACTION_DIAL, uri)
+                startActivity(intent)
+            } else {
+                TODO()
+            }
+        } else {
+            TODO()
         }
     }
 
@@ -570,13 +645,25 @@ class MapActivity : AppCompatActivity() {
                         //move the destination to the nearest town and subsequently (in the geocode listener)
                         //have the route be calculated
                         if (destination != null) {
-                            val request = ReverseGeocodeRequest(destination,ReverseGeocodeMode.RETRIEVE_ADDRESSES,0F)
+                            val request = ReverseGeocodeRequest(
+                                destination,
+                                ReverseGeocodeMode.RETRIEVE_ADDRESSES,
+                                0F
+                            )
                             request.execute(reverseGeocodeListener)
                         } else {
-                            Toast.makeText(applicationContext,"Could not generate a destination.", Toast.LENGTH_LONG).show()
+                            Toast.makeText(
+                                applicationContext,
+                                "Could not generate a destination.",
+                                Toast.LENGTH_LONG
+                            ).show()
                         }
                     } else {
-                        Toast.makeText(applicationContext,"Could not grab your current location.", Toast.LENGTH_LONG).show()
+                        Toast.makeText(
+                            applicationContext,
+                            "Could not grab your current location.",
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
                 } else {
                     //the route has been calculated, but navigation not yet started, start the navigation
@@ -617,7 +704,12 @@ class MapActivity : AppCompatActivity() {
      * @param mode the mode of transport for which the route needs to be calculated
      * @param type the type of route that needs to be calculated (e.g. short or fast)
      */
-    private fun generateRoute(start: GeoCoordinate, end: GeoCoordinate, mode: RouteOptions.TransportMode, type: RouteOptions.Type) {
+    private fun generateRoute(
+        start: GeoCoordinate,
+        end: GeoCoordinate,
+        mode: RouteOptions.TransportMode,
+        type: RouteOptions.Type
+    ) {
         //set the necessary values
         val router = CoreRouter()
         val routePlan = RoutePlan()
@@ -629,7 +721,7 @@ class MapActivity : AppCompatActivity() {
         //need to be added
         var possibleWayPoint:GeoCoordinate? = null
         if (timeSlot != null) {
-            possibleWayPoint = fireHandler.getNearestEdgeCoordinate(timeSlot,start)
+            possibleWayPoint = fireHandler.getNearestEdgeCoordinate(timeSlot, start)
         }
 
         //add waypoints to the routePlan
@@ -673,7 +765,10 @@ class MapActivity : AppCompatActivity() {
             //set the marker on the map
             val marker = MapMarker(coordinate, img!!)
             //adjust it in such a way that the bottom of the marker is at the coordinates, not the center
-            marker.anchorPoint = PointF((img!!.width/2).toFloat(), (4* img!!.height/5).toFloat())
+            marker.anchorPoint = PointF(
+                (img!!.width / 2).toFloat(),
+                (4 * img!!.height / 5).toFloat()
+            )
             map?.addMapObject(marker)
         }
     }
@@ -690,7 +785,13 @@ class MapActivity : AppCompatActivity() {
 
         //calculate the destination coordinates, if the center of the fire is null, this will also be null
         return if (center != null) {
-            getDestinationCoordinatesFromBearing(position, 10000.0, getBearing(center,position,getFireBearing()))
+            getDestinationCoordinatesFromBearing(
+                position, 10000.0, getBearing(
+                    center,
+                    position,
+                    getFireBearing()
+                )
+            )
         } else {
             null
         }
@@ -705,7 +806,11 @@ class MapActivity : AppCompatActivity() {
      * @param fireBearing bearing of the fire
      * @return
      */
-    private fun getBearing(centerOfFire: GeoCoordinate, position: GeoCoordinate, fireBearing: Double): Double {
+    private fun getBearing(
+        centerOfFire: GeoCoordinate,
+        position: GeoCoordinate,
+        fireBearing: Double
+    ): Double {
         //get the bearing between the current position and the center of the fire
         val directHeading:Double = centerOfFire.getHeading(position)
 
@@ -756,7 +861,7 @@ class MapActivity : AppCompatActivity() {
         val nowCoords = polygons?.get(0)?.boundingBox?.center
 
         //calculate a bearing, 0.0 if not possible
-        bearing = nowCoords?.getHeading(GeoCoordinate(lat,lng)) ?: 0.0
+        bearing = nowCoords?.getHeading(GeoCoordinate(lat, lng)) ?: 0.0
 
         //return the bearing
         return bearing
@@ -772,7 +877,11 @@ class MapActivity : AppCompatActivity() {
      * @param bearing the bearing to the destination
      * @return
      */
-    private fun getDestinationCoordinatesFromBearing(start:GeoCoordinate, distanceInMetres:Double, bearing:Double): GeoCoordinate {
+    private fun getDestinationCoordinatesFromBearing(
+        start: GeoCoordinate,
+        distanceInMetres: Double,
+        bearing: Double
+    ): GeoCoordinate {
         //set necessary variables
         val brngRad: Double = toRadians(bearing)
         val latRad: Double = toRadians(start.latitude)
@@ -781,8 +890,16 @@ class MapActivity : AppCompatActivity() {
         val distFrac = distanceInMetres / earthRadiusInMetres
 
         //calculate the longitude and latitude
-        val latitudeResult: Double = asin(sin(latRad) * cos(distFrac) + cos(latRad) * sin(distFrac) * cos(brngRad))
-        val a: Double = atan2(sin(brngRad) * sin(distFrac) * cos(latRad),cos(distFrac) - sin(latRad) * sin(latitudeResult))
+        val latitudeResult: Double = asin(
+            sin(latRad) * cos(distFrac) + cos(latRad) * sin(distFrac) * cos(
+                brngRad
+            )
+        )
+        val a: Double = atan2(
+            sin(brngRad) * sin(distFrac) * cos(latRad), cos(distFrac) - sin(latRad) * sin(
+                latitudeResult
+            )
+        )
         val longitudeResult: Double = (lonRad + a + 3 * PI) % (2 * PI) - PI
 
         //convert to GeoCoordinate
@@ -827,12 +944,12 @@ class MapActivity : AppCompatActivity() {
     private fun setManeuverInfo(next: Maneuver?, afterNext: Maneuver?) {
         //set the next turn information
         if (next != null) {
-            setNavIcon(next,nextTurnView)
+            setNavIcon(next, nextTurnView)
             nextTurnDistance.text = "${next.distanceFromPreviousManeuver} m"
 
             //set the turn after the next turn information
             if (afterNext != null) {
-                setNavIcon(afterNext,afterNextTurnView)
+                setNavIcon(afterNext, afterNextTurnView)
                 //add the distance to the next turn to the distance from the next turn to the turn after the next turn
                 afterNextTurnDistance.text = "${afterNext.distanceFromPreviousManeuver+next.distanceFromPreviousManeuver} m"
             }
@@ -845,7 +962,7 @@ class MapActivity : AppCompatActivity() {
      * @param maneuver the maneuver that needs to be set
      * @param view the view for which the maneuver needs to be set
      */
-    private fun setNavIcon(maneuver:Maneuver, view:ImageView) {
+    private fun setNavIcon(maneuver: Maneuver, view: ImageView) {
         when (maneuver.icon) {
             Maneuver.Icon.HEAVY_LEFT -> view.setImageResource(R.drawable.ic_sharp_left_turn)
             Maneuver.Icon.HEAVY_RIGHT -> view.setImageResource(R.drawable.ic_sharp_right_turn)

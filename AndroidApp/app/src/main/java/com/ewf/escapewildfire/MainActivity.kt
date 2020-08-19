@@ -1,5 +1,6 @@
 package com.ewf.escapewildfire
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -35,6 +36,7 @@ class MainActivity : AppCompatActivity() {
      * will give an error message and shut down. If the cache location has been established it will
      * setup the buttons (using buttonSetup()) and start the ApiHandler through setupPeriodicSycn()
      */
+    @SuppressLint("MissingPermission")
     private fun initialize() {
         setContentView(R.layout.activity_main)
 

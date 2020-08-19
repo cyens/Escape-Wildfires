@@ -15,7 +15,9 @@ val REQUIRED_SDK_PERMISSIONS = arrayOf(
     Manifest.permission.WRITE_EXTERNAL_STORAGE,
     Manifest.permission.INTERNET,
     Manifest.permission.ACCESS_WIFI_STATE,
-    Manifest.permission.ACCESS_NETWORK_STATE)
+    Manifest.permission.ACCESS_NETWORK_STATE,
+    Manifest.permission.READ_PHONE_STATE,
+    Manifest.permission.CALL_PHONE)
 
 
 const val TBT_TEXT = "Turn-by-turn navigation is the standard type of navigation. This is the" +
