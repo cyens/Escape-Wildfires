@@ -56,6 +56,8 @@ class MapActivity : AppCompatActivity() {
 
     private var country: String? = null
     private var emergencyMap = HashMap<String, EmergencyNumber>()
+    private val shelterList = ArrayList<Shelter>()
+
     /*
      * Listeners
      */
@@ -323,6 +325,23 @@ class MapActivity : AppCompatActivity() {
             )
             bitmap = Bitmap.createScaledBitmap(bitmap, 150, 150, true)
             img?.setBitmap(bitmap)
+
+            //Shelter by Luis Prado from the Noun Project
+            val shelterImg = Image()
+            var shelterBitmap = BitmapFactory.decodeResource(resources,R.mipmap.ic_shelter_foreground)
+            shelterBitmap = Bitmap.createScaledBitmap(shelterBitmap,150,150,true)
+            shelterImg.setBitmap(shelterBitmap)
+
+            //add markers for shelter to the map
+            //TODO: make them interactive
+            //TODO: hide them at certain zoom levels/if they are too far away
+            if (shelterList.size > 0) {
+                for (shelter in shelterList) {
+                    val marker = MapMarker(shelter.getCoords(), shelterImg)
+                    marker.isDeclutteringEnabled = true
+                    map?.addMapObject(marker)
+                }
+            }
         } else {
             Log.e(error.toString(), "Cannot initialize Map Fragment")
         }
@@ -347,6 +366,8 @@ class MapActivity : AppCompatActivity() {
         val tmp2:NavigationType = intent.extras?.get("NavigationType") as NavigationType
         navigationType = tmp2
 
+        loadCSVData()
+
         //set the view
         setContentView(layoutId)
 
@@ -358,8 +379,6 @@ class MapActivity : AppCompatActivity() {
 
         //setup the buttons
         buttonSetup()
-
-        loadCodes()
     }
 
     /**
@@ -489,15 +508,34 @@ class MapActivity : AppCompatActivity() {
 
     /**
      * Imports the ISO Alpha-3 country code and their corresponding emergency phone numbers into
-     * a hashmap mapping the country code to the phone number.
+     * a hashmap mapping the country code to the phone number. Also imports the coordinates associated
+     * with the shelters and puts these in a list (might be moved online)
      */
-    private fun loadCodes() {
-        val reader = BufferedReader(InputStreamReader(resources.openRawResource(R.raw.ccen)))
-        val data = reader.readLines()
-        for (element in data) {
+    private fun loadCSVData() {
+        val ccenReader = BufferedReader(InputStreamReader(resources.openRawResource(R.raw.ccen)))
+        val ccenData = ccenReader.readLines()
+        for (element in ccenData) {
             val numbers = element.split(";")
             if (numbers.size == 4 && numbers[0].toLowerCase() != "country") {
                 emergencyMap[numbers[0]] = EmergencyNumber(numbers[1], numbers[2], numbers[3])
+            }
+        }
+
+        val sheltersReader = BufferedReader(InputStreamReader(resources.openRawResource(R.raw.shelters)))
+        val shelterData = sheltersReader.readLines()
+        for (element in shelterData) {
+            val data = element.split(";")
+            if (data.size == 3 && data[0].toLowerCase() != "lat") {
+                try {
+                    val lat = data[0].toDouble()
+                    val long = data[1].toDouble()
+                    val name = data[2]
+                    if (lat != null && long != null && name != null) {
+                        shelterList.add(Shelter(lat,long,name))
+                    }
+                } catch (e:NumberFormatException) {
+                    Log.e("NumberFormatException", e.message)
+                }
             }
         }
     }
