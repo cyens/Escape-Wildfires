@@ -1,5 +1,6 @@
 package com.ewf.escapewildfire
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -25,6 +26,9 @@ import java.io.InputStreamReader
 import java.lang.Math.toDegrees
 import java.lang.Math.toRadians
 import java.lang.ref.WeakReference
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 import kotlin.math.*
 
 
@@ -45,6 +49,7 @@ class MapActivity : AppCompatActivity() {
 
     private var modeOfTransport:RouteOptions.TransportMode = RouteOptions.TransportMode.CAR
     private var navigationType = NavigationType.TURN_BY_TURN
+    private var routeType = RouteOptions.Type.FASTEST
 
     private var locationState:LocationState = LocationState.LOCATION_CENTERED
     private var directionalNavState = DirectionalNavState.NONE
@@ -57,6 +62,8 @@ class MapActivity : AppCompatActivity() {
     private var country: String? = null
     private var emergencyMap = HashMap<String, EmergencyNumber>()
     private val shelterList = ArrayList<Shelter>()
+
+    private val blockedRoads = ArrayList<GeoPolygon>()
 
     /*
      * Listeners
@@ -91,11 +98,14 @@ class MapActivity : AppCompatActivity() {
                             locationState = LocationState.LOCATION_CENTERED
                         }
                     }
+                    else -> {
+                        TODO()
+                    }
                 }
             }
 
             if (country == null && latestPosition != null) {
-                ReverseGeocodeRequest(latestPosition!!).execute(countryCodeReverGeocodeListener)
+                ReverseGeocodeRequest(latestPosition!!).execute(countryCodeReverseGeocodeListener)
             }
         }
 
@@ -117,11 +127,14 @@ class MapActivity : AppCompatActivity() {
         }
     }
 
-    private val countryCodeReverGeocodeListener: ResultListener<Location> =
+    /**
+     * Listener for the reverse geocode request to retrieve the device's country
+     */
+    private val countryCodeReverseGeocodeListener: ResultListener<Location> =
         ResultListener<Location> { data, error ->
             if (error == ErrorCode.NONE) {
                 country = data?.address?.countryCode
-                Log.d("code", country)
+                //Log.d("code", country)
             } else {
                 TODO()
             }
@@ -165,6 +178,10 @@ class MapActivity : AppCompatActivity() {
             // Display a message indicating route calculation failure
             if (error == RoutingError.NONE){
                 if (routeResult != null) {
+                    if (currentRoute != null) {
+                        map?.removeMapObject(currentRoute!!)
+                    }
+
                     gbb = routeResult[0].route.boundingBox
                     // Render the route on the map
                     currentRoute = MapRoute(routeResult[0].route)
@@ -274,7 +291,7 @@ class MapActivity : AppCompatActivity() {
                 val position = positioningManager?.position?.coordinate
                 val destination = data?.get(0)?.location?.coordinate
                 if (position != null && destination != null) {
-                    generateRoute(position, destination, modeOfTransport, RouteOptions.Type.FASTEST)
+                    generateRoute(position, destination, modeOfTransport, routeType)
                 }
             }
         }
@@ -504,6 +521,10 @@ class MapActivity : AppCompatActivity() {
         emergency_call.setOnClickListener {
             startPhoneCall()
         }
+
+        road_blocked.setOnClickListener {
+            blockedRoad()
+        }
     }
 
     /**
@@ -516,7 +537,7 @@ class MapActivity : AppCompatActivity() {
         val ccenData = ccenReader.readLines()
         for (element in ccenData) {
             val numbers = element.split(";")
-            if (numbers.size == 4 && numbers[0].toLowerCase() != "country") {
+            if (numbers.size == 4 && numbers[0].toLowerCase(Locale.ROOT) != "country") {
                 emergencyMap[numbers[0]] = EmergencyNumber(numbers[1], numbers[2], numbers[3])
             }
         }
@@ -525,14 +546,12 @@ class MapActivity : AppCompatActivity() {
         val shelterData = sheltersReader.readLines()
         for (element in shelterData) {
             val data = element.split(";")
-            if (data.size == 3 && data[0].toLowerCase() != "lat") {
+            if (data.size == 3 && data[0].toLowerCase(Locale.ROOT) != "lat") {
                 try {
                     val lat = data[0].toDouble()
                     val long = data[1].toDouble()
                     val name = data[2]
-                    if (lat != null && long != null && name != null) {
-                        shelterList.add(Shelter(lat,long,name))
-                    }
+                    shelterList.add(Shelter(lat,long,name))
                 } catch (e:NumberFormatException) {
                     Log.e("NumberFormatException", e.message)
                 }
@@ -571,6 +590,49 @@ class MapActivity : AppCompatActivity() {
             ).show()
             emptyPhoneCall()
         }
+    }
+
+    /**
+     * mark the area ahead as blocked and recalculate route
+     */
+    private fun blockedRoad() {
+        val circleCenter = getDestinationCoordinatesFromBearing(
+            positioningManager!!.position.coordinate,250.0,
+            positioningManager!!.position.heading)
+
+
+        blockedRoads.add(circleToPolygon(circleCenter,200.0,8))
+        if (currentRoute != null) {
+            navManager?.stop()
+            generateRoute(positioningManager!!.position.coordinate,currentRoute!!.route?.destination!!,modeOfTransport,routeType)
+        }
+    }
+
+    /**
+     * Returns a polygon of the circle described by the given center coordinate and radius. The
+     * detail of the circle can be set using the amount parameter
+     *
+     * @param coord the center coordinate for the circle
+     * @param radius the radius of the circle in meters
+     * @param amount the amount of points the polygon is going to be made out of, minimum is always set to 3
+     * @return
+     */
+    private fun circleToPolygon(coord: GeoCoordinate, radius:Double, amount:Int): GeoPolygon {
+        val points = ArrayList<GeoCoordinate>()
+        //ensure the amount of point in the polygon is at least 3
+        val tmp = if (amount < 3) {
+            3
+        } else {
+            amount
+        }
+        //generate the polygon points
+        for (i in 0 until tmp) {
+            val bearing = 360.0/amount * i.toDouble()
+            points.add(getDestinationCoordinatesFromBearing(coord,radius,bearing))
+        }
+        //generate polygon
+        //map?.addMapObject(MapPolygon(poly))
+        return GeoPolygon(points)
     }
 
     /**
@@ -704,29 +766,21 @@ class MapActivity : AppCompatActivity() {
                 //nothing has been done yet
                 if (currentRoute == null) {
                     //route has to be calculated
-                    if (position != null) {
-                        //generate a destination
-                        val destination = getDestination(position)
-                        //move the destination to the nearest town and subsequently (in the geocode listener)
-                        //have the route be calculated
-                        if (destination != null) {
-                            val request = ReverseGeocodeRequest(
-                                destination,
-                                ReverseGeocodeMode.RETRIEVE_ADDRESSES,
-                                0F
-                            )
-                            request.execute(reverseGeocodeListener)
-                        } else {
-                            Toast.makeText(
-                                applicationContext,
-                                "Could not generate a destination.",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        }
+                    //generate a destination
+                    val destination = getDestination(position)
+                    //move the destination to the nearest town and subsequently (in the geocode listener)
+                    //have the route be calculated
+                    if (destination != null) {
+                        val request = ReverseGeocodeRequest(
+                            destination,
+                            ReverseGeocodeMode.RETRIEVE_ADDRESSES,
+                            0F
+                        )
+                        request.execute(reverseGeocodeListener)
                     } else {
                         Toast.makeText(
                             applicationContext,
-                            "Could not grab your current location.",
+                            "Could not generate a destination.",
                             Toast.LENGTH_LONG
                         ).show()
                     }
@@ -735,6 +789,7 @@ class MapActivity : AppCompatActivity() {
                     startNavigation()
                     start_nav.text = PAUSE_NAVIGATION_TEXT
                     topRightConstraint.visibility = View.VISIBLE
+                    road_blocked.visibility = View.VISIBLE
                 }
             }
             NavigationManager.NavigationState.PAUSED -> {
@@ -812,6 +867,10 @@ class MapActivity : AppCompatActivity() {
         val polygon: ArrayList<GeoPolygon> = fireHandler.getBannedAreaPolygons(timeSlot)
 
         for (poly in polygon) {
+            router.dynamicPenalty.addBannedArea(poly)
+        }
+
+        for (poly in blockedRoads) {
             router.dynamicPenalty.addBannedArea(poly)
         }
 
@@ -939,7 +998,7 @@ class MapActivity : AppCompatActivity() {
      *
      * @param start the starting location
      * @param distanceInMetres the distance from the starting location to the destination
-     * @param bearing the bearing to the destination
+     * @param bearing the bearing to the destination in degrees
      * @return
      */
     private fun getDestinationCoordinatesFromBearing(
@@ -1006,6 +1065,7 @@ class MapActivity : AppCompatActivity() {
      * @param next the next maneuver
      * @param afterNext the maneuver after the next maneuver
      */
+    @SuppressLint("SetTextI18n")
     private fun setManeuverInfo(next: Maneuver?, afterNext: Maneuver?) {
         //set the next turn information
         if (next != null) {
