@@ -98,9 +98,8 @@ class MapActivity : AppCompatActivity() {
                             locationState = LocationState.LOCATION_CENTERED
                         }
                     }
-                    else -> {
-                        TODO()
-                    }
+                    //the other option is that the locationState is NOT_CENTERED, in that case
+                    //nothing should happen
                 }
             }
 
@@ -275,10 +274,12 @@ class MapActivity : AppCompatActivity() {
                     request.execute(geocodeListener)
                     //Log.d("nav", "${position}")
                 } else {
-                    TODO()
+                    Log.e("position/city", "either the position was null or the retrieved city was null")
+                    Toast.makeText(this, "Something went wrong when generating the route", Toast.LENGTH_LONG).show()
                 }
             } else {
-                TODO()
+                Log.e("reverseGeocodeError", error.name)
+                Toast.makeText(this, "Something went wrong when generating the route", Toast.LENGTH_LONG).show()
             }
         }
 
@@ -315,7 +316,7 @@ class MapActivity : AppCompatActivity() {
                 //add position listener
                 positioningManager!!.addListener(WeakReference(positionListener))
             } else {
-                TODO()
+                Log.e("positioning manager", "positioning manager is null")
             }
             setupNavManager()
 
