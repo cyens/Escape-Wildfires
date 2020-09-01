@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <title>Escape WildFire | Fire Management</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+	<link rel="stylesheet" type="text/css" href="https://js.api.here.com/v3/3.1/mapsjs-ui.css" />
+
+    <link rel="stylesheet" href="{{ url_for('static',filename='styles/main.css') }}">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+	<script src="{{ url_for('static',filename='js/bootstrap-input-spinner.js') }}"></script>
+
+	<script src="https://js.api.here.com/v3/3.1/mapsjs-core.js" type="text/javascript" charset="utf-8"></script>
+	<script src="https://js.api.here.com/v3/3.1/mapsjs-service.js" type="text/javascript" charset="utf-8"></script>
+	<script src="https://js.api.here.com/v3/3.1/mapsjs-ui.js" type="text/javascript" charset="utf-8"></script>
+  	<script src="https://js.api.here.com/v3/3.1/mapsjs-mapevents.js"type="text/javascript" charset="utf-8"></script>
+</head>
+<body>
+<div class="container-xl">
+	<div class="table-responsive">
+        <div class="py-5 text-center">
+            <h2><span><img src="{{ url_for('static',filename='img/logo.png') }}" width="100" style="padding-right:15px"></span>Fire Management Tool</h2>
+        </div>
+		<div class="table-wrapper">
+			<div class="table-title">
+				<div class="row">
+					<div class="col-sm-6">
+						<h2>Manage wildfires</h2>
+					</div>
+					<div class="col-sm-6">
+						<a href="#addWildfireModal" class="btn btn-danger" data-toggle="modal"><i class="material-icons">&#xE147;</i> <span>Add new wildfire</span></a>
+						<a href="./" class="btn btn-info"><i class="material-icons">refresh</i> <span>Refresh</span></a>
+					</div>
+				</div>
+			</div>
+			<table class="table table-striped table-hover">
+				<thead>
+					<tr>
+						<th>Location</th>
+						<th>Time of ignition</th>
+                        <th>Latest update</th>
+						<th>Comments</th>
+						<th>Status</th>
+						<th>Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for row in rows %}
+						<tr>
+							<td style="width:16%">
+								{{row[1]}}, {{row[2]}}
+								<a href="#showLocationModal" data-toggle="modal" data-lat={{row[1]}} data-lon={{row[2]}}><i class="material-icons" data-toggle="tooltip" title="Show on map">map</i></a>
+							</td>
+							<td>{{row[3]}}</td>
+							<td>{{row[4]}}</td>
+							<td style="width:30%">{{row[5]}}</td>
+							<td>
+								{% if row[6] %}
+									<h1 class="badge badge-warning">ACTIVE</h1>
+								{% else %}
+									<h1 class="badge badge-success">INACTIVE</h1>
+								{% endif %}
+							</td>
+							<td>
+								{% if row[6] %}
+									<a href="#deactivateWildfireModal" class="edit" data-toggle="modal" data-sid="{{row[0]}}"><i class="material-icons" data-toggle="tooltip" title="Deactivate">local_fire_department</i></a>
+								{% else %}
+									<a href="#activateWildfireModal" class="edit" data-toggle="modal" data-sid="{{row[0]}}"><i class="material-icons" data-toggle="tooltip" title="Activate">local_fire_department</i></a>
+								{% endif %}
+								<a href="#deleteWildfireModal" class="delete" data-toggle="modal" data-sid="{{row[0]}}"><i class="material-icons" data-toggle="tooltip" title="Delete">&#xE872;</i></a>
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+
+<div id="addWildfireModal" class="modal fade">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form action="{{ url_for('addWildfire') }}" method="post">
+				<div class="modal-header">
+					<h4 class="modal-title">Add new wildfire</h4>
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				</div>
+				<div class="modal-body">
+					<div class="form-group">
+						<label>Time of ignition</label>
+						<input id="ignitionTimeSelector" name="time" type="number" value="10" min="1" max="120" step="1" data-suffix="mins. ago"/>
+						<div class="alert alert-light text-center" role="alert">
+							i.e. fire started on <b id="ignitionTimeDisplay">2020-08-20 10:20</b>
+						</div>
+					</div>
+					<div class="form-group">
+						<label>Location of ignition</label>
+						<div style="width: 100%; height: 200px" id="mapContainer"></div>
+						<div class="form-row">
+							<div class="col">
+							  	<input id="ignitionLat" type="number" step=any class="form-control" placeholder="Latitude" name="latitude" value=42.110795 required>
+							</div>
+							<div class="col">
+							  	<input id="ignitionLon" type="number" step=any class="form-control" placeholder="Longitude" name="longitude" value=9.143008 required>
+							</div>
+						</div>
+					</div>
+					<div class="form-group">
+						<label>Comments</label>
+						<textarea name="comments" class="form-control" required></textarea>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<input type="button" class="btn btn-default" data-dismiss="modal" value="Cancel">
+					<input type="submit" class="btn btn-success" value="Add">
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div id="activateWildfireModal" class="modal fade">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form action="{{ url_for('activateWildfire') }}" method="post">
+				<div class="modal-header">
+					<h4 class="modal-title">Activate wildfire</h4>
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				</div>
+				<div class="modal-body">
+					<p>Are you sure you want to re-activate this wildfire?</p>
+					<input type="hidden" class="form-control" name="sid" required>
+				</div>
+				<div class="modal-footer">
+					<input type="button" class="btn btn-default" data-dismiss="modal" value="Cancel">
+					<input type="submit" class="btn btn-warning" value="Activate">
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div id="deactivateWildfireModal" class="modal fade">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form action="{{ url_for('deactivateWildfire') }}" method="post">
+				<div class="modal-header">
+					<h4 class="modal-title">Deactivate wildfire</h4>
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				</div>
+				<div class="modal-body">
+					<p>Are you sure you want to deactivate this wildfire? Please make sure that the fire is completely extinguished before performing this action.</p>
+					<input type="hidden" class="form-control" name="sid" required>
+				</div>
+				<div class="modal-footer">
+					<input type="button" class="btn btn-default" data-dismiss="modal" value="Cancel">
+					<input type="submit" class="btn btn-success" value="Deactivate">
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<!-- Delete Modal HTML -->
+<div id="deleteWildfireModal" class="modal fade">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form action="{{ url_for('deleteWildfire') }}" method="post">
+				<div class="modal-header">
+					<h4 class="modal-title">Delete wildfire</h4>
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				</div>
+				<div class="modal-body">
+					<p>Are you sure you want to delete these wildfires?</p>
+					<p class="text-warning"><p class="badge badge-warning">WARNING</p> This action cannot be undone.</p>
+					<input type="hidden" class="form-control" name="sid" required>
+				</div>
+				<div class="modal-footer">
+					<input type="button" class="btn btn-default" data-dismiss="modal" value="Cancel">
+					<input type="submit" class="btn btn-danger" value="Delete">
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div id="showLocationModal" class="modal fade">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">Location of fire</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<div style="width: 100%; height: 200px" id="locationContainer"></div>
+			</div>
+		</div>
+	</div>
+</div>
+
+</body>
+
+<script src="{{ url_for('static',filename='js/main.js') }}"></script>
+</html>
