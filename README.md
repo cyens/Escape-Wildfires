@@ -6,6 +6,10 @@ Wildfires have a great impact on a considerable number of countries around the w
 
 ![System architecture diagram](SystemArchitecture.png)
 
+## Screenshots
+### Mobile application
+![Screenshots of the mobile app](AndroidAppScreenshots.png)
+
 ## How to run EscapeWildFire?
 1.  Get authorization keys from [Windy API](https://api.windy.com/) and [HERE XYZ](https://www.here.xyz/).
 2.  Paste keys into the *simulateWildfire.py* files.
