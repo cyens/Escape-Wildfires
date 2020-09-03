@@ -28,5 +28,13 @@ The framework consists of three main components:
 ## Overview of framework
 ![System architecture diagram](SystemArchitecture.png)
 
+## Contact
+In case of any questions or requests, an e-mail can be sent to:
+| Name | Affiliation | Email |
+| ------ | ------ | ------ |
+| Andreas Kamilaris | RISE CoE | [mailto:a.kamilaris@rise.org.cy][a.kamilaris@rise.org.cy] |
+| Jesper Provoost | University of Twente | [mailto:j.c.provoost@utwente.nl][j.c.provoost@utwente.nl] |
+| Wouter Couwenbergh | University of Twente | [mailto:w.couwenbergh@utwente.nl][w.couwenbergh@utwente.nl] |
+
 
 
