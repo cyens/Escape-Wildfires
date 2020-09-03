@@ -32,9 +32,9 @@ The framework consists of three main components:
 In case of any questions or requests, an e-mail can be sent to:
 | Name | Affiliation | Email |
 | ------ | ------ | ------ |
-| Andreas Kamilaris | RISE CoE | [mailto:a.kamilaris@rise.org.cy][a.kamilaris@rise.org.cy] |
-| Jesper Provoost | University of Twente | [mailto:j.c.provoost@utwente.nl][j.c.provoost@utwente.nl] |
-| Wouter Couwenbergh | University of Twente | [mailto:w.couwenbergh@utwente.nl][w.couwenbergh@utwente.nl] |
+| Andreas Kamilaris | RISE CoE | [a.kamilaris@rise.org.cy](mailto:a.kamilaris@rise.org.cy) |
+| Jesper Provoost | University of Twente | [j.c.provoost@utwente.nl](mailto:j.c.provoost@utwente.nl) |
+| Wouter Couwenbergh | University of Twente | [w.couwenbergh@utwente.nl](mailto:w.couwenbergh@utwente.nl) |
 
 
 
