@@ -17,13 +17,20 @@ The framework consists of three main components:
 ![Screenshots of the web app](FireManagementScreenshots.png)
 
 ## How to run EscapeWildFire?
+#### Before starting
 1.  Get authorization keys from [Windy API](https://api.windy.com/) and [HERE XYZ](https://www.here.xyz/).
-2.  Paste keys into the *simulateWildfire.py* files.
+2.  Paste keys into the *simulateWildfire.py* files (inside the /WebApplication folder).
+3.  Also paste the HERE XYZ API key in the *authToken* variable within the *ApiHandler.kt* file (inside the AndroidApp/app/src/main/java/com/ewf/escapewildfire folder).
+
+#### Running the fire management tool
+1.  Install the Python dependencies *SQLite3* and *Flask*. 
+2.  Go into the *WebApplication* directory.
 3.  Execute the *python3 webApplication.py* command to run the main program.
-4.  Open the Android Studio project and set authorization variable to your personal HERE XYZ key.
-5.  Build and run the mobile app using the Android Emulator (in Android Studio) or an Android phone.
-6.  Open *localhost:5000* in the browser.
-7.  Start managing wildfires in the browser and observe the mobile application
+4.  Open *localhost:5000* in the browser.
+5.  Start managing wildfires in the browser and observe the mobile application.
+
+#### Running the mobile application
+To be continued.
 
 ## Overview of framework
 ![System architecture diagram](SystemArchitecture.png)
