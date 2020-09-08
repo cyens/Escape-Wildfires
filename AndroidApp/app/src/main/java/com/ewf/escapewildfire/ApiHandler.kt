@@ -18,6 +18,8 @@ import org.json.JSONObject
 class ApiHandler(appContext: Context, workerParams: WorkerParameters):  Worker(appContext, workerParams){
     private val gson = GsonBuilder().create()
 
+    val authToken = "{YOUR_BEARER_TOKEN}"
+
     /**
      * Listens to the result from the spaceRequest
      */
@@ -53,7 +55,6 @@ class ApiHandler(appContext: Context, workerParams: WorkerParameters):  Worker(a
                                 HashMap()
 
                             // Put access token in HTTP request.
-                            val authToken = "ABZe4tg0RSaH-61X65T3kQA"
                             headers["Authorization"] = "Bearer $authToken"
                             return headers
                         }
@@ -105,7 +106,7 @@ class ApiHandler(appContext: Context, workerParams: WorkerParameters):  Worker(a
         Response.ErrorListener { error ->
              //Callback method that an error has been occurred with the provided error code and optional
              //user-readable message.
-            Log.e("XYZ_API", "That didn't work! Error ${error.toString()}" )
+            Log.e("XYZ_API", "That didn't work! Error $error" )
         }
 
     /**
@@ -118,7 +119,6 @@ class ApiHandler(appContext: Context, workerParams: WorkerParameters):  Worker(a
                     HashMap()
 
                 // Put access token in HTTP request.
-                val authToken = "ABZe4tg0RSaH-61X65T3kQA"
                 headers["Authorization"] = "Bearer $authToken"
                 return headers
             }
