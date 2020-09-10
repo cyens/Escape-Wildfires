@@ -9,7 +9,7 @@ The framework consists of three main components:
 2.  The **system core** which (upon activation by the fire management tool) initiates a fire simulation, periodically updates the simulator and uploads the polygons to the HERE XYZ service.
 3.  The **mobile application** which retrieves the active wildfire polygons from the HERE XYZ service and computes an escape route based on the user's location.
 
-For a detailed explanation of the individual components and their interaction, please read the [documentation](Documentation.pdf).
+For a detailed explanation of the individual components and their interaction, please read the [documentation](Documentation.pdf) or watch the [presentation video](Presentation.mp4).
 
 ## Screenshots
 ### Mobile application
@@ -26,7 +26,7 @@ For a detailed explanation of the individual components and their interaction, p
 4.  Also paste the HERE XYZ API key in the *authToken* variable within the *ApiHandler.kt* file (inside the AndroidApp/app/src/main/java/com/ewf/escapewildfire folder).
 
 #### Running the fire management tool
-1.  Install the Python dependencies *SQLite3* and *Flask*. 
+1.  Install the Python dependencies *SQLite3* and *Flask*.
 2.  Go into the *WebApplication* directory.
 3.  Execute the *python3 webApplication.py* command to run the main program.
 4.  Open *localhost:5000* in the browser.
@@ -45,6 +45,3 @@ In case of any questions or requests, an e-mail can be sent to:
 | Andreas Kamilaris | RISE CoE | [a.kamilaris@rise.org.cy](mailto:a.kamilaris@rise.org.cy) |
 | Jesper Provoost | University of Twente | [j.c.provoost@utwente.nl](mailto:j.c.provoost@utwente.nl) |
 | Wouter Couwenbergh | University of Twente | [w.couwenbergh@utwente.nl](mailto:w.couwenbergh@utwente.nl) |
-
-
-
