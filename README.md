@@ -33,7 +33,20 @@ For a detailed explanation of the individual components and their interaction, p
 5.  Start managing wildfires in the browser and observe the mobile application.
 
 #### Running the mobile application
-To be continued.
+1.  To run the app, first either clone or download the project to your pc. Once you have the project folder somewhere on your pc, use android studio to browse to the folder. This folder should contain a folder named AndroidApp which android studio should recognize as an android studio project. Once you have opened the project, and android studio is done generating the necessary files, make sure you have an emulator (preferably android 8 or higher). If android studio is done generating the files and you have an emulator ready, you should be able to press the green play button in the top right corner of android studio to launch the app on the emulator. However, before it will work properly the application needs to be updated with the correct credentials. These are discussed below. To be able to run the application, at least the HERE Maps credentials in the manifest and the bearer token for HERE XYZ need to be updated.
+2.  To adapt the application for your own purpose there are a couple of things that can be changed and some that need to be changed. If android studio's project view is set to android you should be able to find a folder called raw in the res (resources) folder. This folder contains two csv files, ccen.csv should not need to be edited. This one contains the mapping between a country code and the emergency numbers for that country. The second csv file, shelers.csv, is used to place shelters on the map. What does need to be changed is the credentials for the HERE MAP services, these are located in the android manifest. You will also need to acquire a set of credentials by registering your application on http://developer.here.com. Each application requires a unique set of credentials. When you register your app, the registered bundle identifier must match the applicationId in your project's build.gradle. You can add credentials to your app by opening the app/src/main/AndroidManifest.xml file and modifying the following <meta-data> tags:
+
+<meta-data android:name="com.here.android.maps.appid" android:value="{YOUR_APP_ID}"/>
+<meta-data android:name="com.here.android.maps.apptoken" android:value="{YOUR_APP_CODE}"/>
+<meta-data android:name="com.here.android.maps.license.key" android:value="{YOUR_LICENSE_KEY}"/>"/>
+
+For more information check the HERE SDK documentation (https://developer.here.com/documentation/android-premium/3.16/dev_guide/topics/overview.html)
+
+The same goes for the authToken that can be found in the ApiHandler class, however this token needs to be retrieved from the HERE XYZ service.
+Instructions for this can be found here: https://www.here.xyz/api/quickstart/acquiringcredentials/
+
+3.  For instructions on how to publish an app to the google play store please check the following link:
+https://support.google.com/googleplay/android-developer/answer/113469?hl=en
 
 ## Overview of framework
 ![System architecture diagram](SystemArchitecture.png)
