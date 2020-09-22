@@ -360,6 +360,9 @@ class MapActivity : AppCompatActivity() {
                     map?.addMapObject(marker)
                 }
             }
+
+            //initialize nav buttons
+            navButtonSetup()
         } else {
             Log.e(error.toString(), "Cannot initialize Map Fragment")
         }
@@ -414,7 +417,7 @@ class MapActivity : AppCompatActivity() {
 
         navigation_zoom_out.text = ZOOM_OUT_BUTTON_TEXT
 
-        //set these after they have been initialzed (hence the .post, otherwise it will cause errors)
+        //set these after they have been initialized (hence the .post, otherwise it will cause errors)
         nextTurnShape.post {
             val width = nextTurnShape.measuredWidth
             val height = nextTurnShape.measuredHeight
@@ -441,10 +444,25 @@ class MapActivity : AppCompatActivity() {
         /*
          * Listeners
          */
+
+        emergency_call.setOnClickListener {
+            startPhoneCall()
+        }
+
+        road_blocked.setOnClickListener {
+            blockedRoad()
+        }
+    }
+
+    /**
+     * Setup button listeners for buttons that interact with the map
+     *
+     */
+    private fun navButtonSetup() {
         navigation_zoom_in.setOnClickListener {
             if (navManager != null && navManager!!.runningState == NavigationManager.NavigationState.RUNNING) {
                 navManager!!.mapUpdateMode = NavigationManager.MapUpdateMode.NONE
-             }
+            }
 
             if (zoomLevel == -1.1|| zoomLevel < map!!.zoomLevel){
                 zoomLevel = map!!.zoomLevel
@@ -517,14 +535,6 @@ class MapActivity : AppCompatActivity() {
             if (bounding != null && map != null) {
                 zoomToBoundingBox(bounding, map!!.orientation)
             }
-        }
-
-        emergency_call.setOnClickListener {
-            startPhoneCall()
-        }
-
-        road_blocked.setOnClickListener {
-            blockedRoad()
         }
     }
 
