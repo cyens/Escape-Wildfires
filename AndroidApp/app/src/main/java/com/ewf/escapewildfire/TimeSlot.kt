@@ -14,7 +14,8 @@ enum class TimeSlot (val index: Int) {
                 1 -> FIFTEEN
                 2 -> THIRTY
                 3 -> FOURTYFIVE
-                else -> SIXTY
+                4 -> SIXTY
+                else -> NOW
             }
         }
     }

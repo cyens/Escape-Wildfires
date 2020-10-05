@@ -178,6 +178,7 @@ class MapActivity : AppCompatActivity() {
             // If the route was calculated successfully
             // Display a message indicating route calculation failure
             if (error == RoutingError.NONE) {
+                correction = 0
                 if (routeResult != null) {
                     if (currentRoute != null) {
                         map?.removeMapObject(currentRoute!!)
@@ -209,7 +210,7 @@ class MapActivity : AppCompatActivity() {
                 //its direction is into the previous timeslot of the fire. A correction variable is
                 //set and the route generated again. This time however the previous timeslot will
                 //not be added to the banned areas, so a route can be calculated.
-                correction = 1
+                correction += 1
                 val position = positioningManager?.position?.coordinate
                 if (position != null) {
                     turnByTurnButtonAction(position)
@@ -876,7 +877,6 @@ class MapActivity : AppCompatActivity() {
         //route can be calculated.
         if (timeSlot != null && correction > 0) {
             timeSlot = TimeSlot.get(timeSlot.index - correction)
-            correction = 0
         }
 //TODO: create a better nearest edge coordinate function, the current version grabs the nearest node coordinate instead of also searching along the edge for a nearest coordinate
 //
