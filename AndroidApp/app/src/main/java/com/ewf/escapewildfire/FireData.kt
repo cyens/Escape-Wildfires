@@ -8,9 +8,8 @@ import com.here.android.mpa.mapping.Map
 import com.here.android.mpa.mapping.MapPolygon
 
 class FireData(private val id:String, private val coordinates: ArrayList<ArrayList<Array<Double>>>) {
-    private var polygons: Array<GeoPolygon?> = Array(5) {
-        null
-    }
+    //Should currently contain a maximum of 5 timeslots, 5 polygons
+    private var polygons = ArrayList<GeoPolygon?>()
 
     /*
      * setters/generators
@@ -21,16 +20,12 @@ class FireData(private val id:String, private val coordinates: ArrayList<ArrayLi
      * data and the generation of the polygons are done separately.
      */
     fun generateFirePolygon() {
-        var counter = 0
+        //limit the number of polygons/timeslots
+        var limit = coordinates.size.coerceAtMost(5)
+
         //add a GeoPolygon to the array of polygons described by the array of coordinates
-        for (list in coordinates) {
-            polygons[counter] = getGeoPolygon(list)
-            counter += 1
-        }
-        //set the polygons after the latest contained in the coordinates array to null, since these
-        //are not contained in the data
-        for (i in counter until polygons.size) {
-            polygons[i] = null
+        for (i in 0 until limit) {
+            polygons.add(getGeoPolygon(coordinates.get(i)))
         }
     }
 
@@ -51,7 +46,7 @@ class FireData(private val id:String, private val coordinates: ArrayList<ArrayLi
      *
      * @return the polygons that describe this fire
      */
-    fun getPolygons(): Array<GeoPolygon?> {
+    fun getPolygons(): ArrayList<GeoPolygon?> {
         return polygons
     }
 
@@ -61,8 +56,8 @@ class FireData(private val id:String, private val coordinates: ArrayList<ArrayLi
      * @param timeSlot a time frame to return the polygon for
      * @return the polygon associated with this timeslot/timeframe
      */
-    fun getPolygon(timeSlot: TimeSlots): GeoPolygon? {
-        return polygons[getPolygonIndex(timeSlot)]
+    fun getPolygon(timeSlot: TimeSlot): GeoPolygon? {
+        return polygons[timeSlot.index]
     }
 
     /**
@@ -90,51 +85,17 @@ class FireData(private val id:String, private val coordinates: ArrayList<ArrayLi
      * @param timeSlot the time frame before which the polygons will be returned
      * @return the list of polygons that occur before the given timeframe
      */
-    fun getFirePolygonsBefore(timeSlot:TimeSlots): Array<GeoPolygon> {
+    fun getFirePolygonsBefore(timeSlot:TimeSlot): ArrayList<GeoPolygon> {
         //initialize the list of polygons
         val polygonsList = ArrayList<GeoPolygon>()
-        //get the index of the given timeSlot
-        val index = getPolygonIndex(timeSlot)
         //add all the polygons before the given timeSlot to the polygonsList
-        for (i in 0 until index) {
+        for (i in 0 until timeSlot.index) {
             val poly = polygons[i]
             if (poly != null) {
                 polygonsList.add(poly)
             }
         }
-        return geoListToArray(polygonsList)
-    }
-
-    /**
-     * get the index of a polygon depending on the time frame
-     *
-     * @param timeSlot the timeslot/timeframe for which the index is being requested
-     * @return the index in the array of polygons associated with the timeslot/timeframe
-     */
-    private fun getPolygonIndex(timeSlot: TimeSlots): Int {
-        return when (timeSlot){
-            TimeSlots.NOW -> 0
-            TimeSlots.FIFTEEN -> 1
-            TimeSlots.THIRTY -> 2
-            TimeSlots.FOURTYFIVE -> 3
-            TimeSlots.SIXTY -> 4
-        }
-    }
-
-    /**
-     * get the time frame for a given polygon index
-     *
-     * @param index the index of the polygon in the array of polygons in  this firedata
-     * @return the timeslot associated with this index
-     */
-    private fun getPolygonTimeSlot(index: Int): TimeSlots {
-        return when (index) {
-            0 -> TimeSlots.NOW
-            1 -> TimeSlots.FIFTEEN
-            2 -> TimeSlots.THIRTY
-            3 -> TimeSlots.FOURTYFIVE
-            else -> TimeSlots.SIXTY
-        }
+        return polygonsList
     }
 
     /**
@@ -271,22 +232,15 @@ class FireData(private val id:String, private val coordinates: ArrayList<ArrayLi
      * @param coordinate the coordinate that needs to be checked to see if it is inside the fire
      * @return the timeslot the coordinates are contained within, null if not in the fire
      */
-    fun checkInsideFire(coordinate:GeoCoordinate): TimeSlots? {
-        //cycle through all the polygons that describe the fire
-        for (i in polygons.indices) {
-            //reverse the order in which the polygons are accessed, starting with the outermost
-            //polygon (assuming that predictions further into the future, the polygons with greater
-            //index, cover a bigger area than the previous polygons and that these previous polygons
-            //are contained in the outer polygons)
-            val index = polygons.size - 1 - i
-            val poly = polygons[index]
-
+    fun checkInsideFire(coordinate:GeoCoordinate): TimeSlot? {
+        //cycle through all the polygons that describe the fire, from inner to outer fire polygon
+        for (poly in polygons) {
             //check if the coordinates are contained within the polygon. return the timeslot
             //associated with this polygon if the coordinates are indeed contained within the
             //polygon
             if (poly != null) {
                 if (poly.contains(coordinate)) {
-                    return getPolygonTimeSlot(index)
+                    return TimeSlot.get(polygons.indexOf(poly))
                 }
             }
         }
@@ -354,23 +308,5 @@ class FireData(private val id:String, private val coordinates: ArrayList<ArrayLi
             }
         }
         return splitPolys
-    }
-
-    /**
-     * convert a list of GeoPolygons to an array of GeoPolygons
-     *
-     * @param list the list of polygons
-     * @return the array of polygons
-     */
-    private fun geoListToArray(list: List<GeoPolygon>): Array<GeoPolygon> {
-        //initialize empty array
-        val arr = Array(list.size) {
-            GeoPolygon()
-        }
-        //copy elements from the list to the array
-        for (i in list.indices) {
-            arr[i] = list[i]
-        }
-        return arr
     }
 }

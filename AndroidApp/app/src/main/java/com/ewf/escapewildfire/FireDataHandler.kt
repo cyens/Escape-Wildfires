@@ -121,7 +121,7 @@ class FireDataHandler {
      *
      * @return the array of GeoPolygons of the nearest fire
      */
-    fun getFirePolygons(): Array<GeoPolygon?>? {
+    fun getFirePolygons(): ArrayList<GeoPolygon?>? {
         return getFirePolygons(nearestId)
     }
 
@@ -131,7 +131,7 @@ class FireDataHandler {
      * @param timeSlot the timeslot the phone is found in, null if outside of the fire
      * @return a list of polygons that can be used for the banned are in the dynamic penalty
      */
-    fun getBannedAreaPolygons(timeSlot: TimeSlots?):ArrayList<GeoPolygon> {
+    fun getBannedAreaPolygons(timeSlot: TimeSlot?):ArrayList<GeoPolygon> {
         //initialize the list to hold the polygons that describe the area that has to be avoided
         //when the route is generated
         val bannedAreaPolygons = ArrayList<GeoPolygon>()
@@ -177,7 +177,7 @@ class FireDataHandler {
      * @param timeSlot the time frame for which the polygon needs to be retrieved
      * @return the polygon if there is a polygon for the given timeframe, else null
      */
-    private fun getFirePolygon(timeSlot: TimeSlots): GeoPolygon? {
+    private fun getFirePolygon(timeSlot: TimeSlot): GeoPolygon? {
         return fireData[nearestId]?.getPolygon(timeSlot)
     }
 
@@ -188,7 +188,7 @@ class FireDataHandler {
      * @return the array of polygons describing the given id, if there is a fire associated with this
      * id. else the return is null
      */
-    private fun getFirePolygons(id:String): Array<GeoPolygon?>? {
+    private fun getFirePolygons(id:String): ArrayList<GeoPolygon?>? {
         return fireData[id]?.getPolygons()
     }
 
@@ -198,7 +198,7 @@ class FireDataHandler {
      * @param timeSlot the time frame before which the previous polygons need to be retrieved
      * @return the array containing the polygons before the given time frame.
      */
-    private fun getFirePolygonsBefore(timeSlot:TimeSlots): Array<GeoPolygon>? {
+    private fun getFirePolygonsBefore(timeSlot:TimeSlot): ArrayList<GeoPolygon>? {
         return fireData[nearestId]?.getFirePolygonsBefore(timeSlot)
     }
 
@@ -223,7 +223,7 @@ class FireDataHandler {
      * @param coordinate the coordinate for which the nearest edge needs to be found
      * @return if successful the coordinates of the nearest coordinate. null if not
      */
-    fun getNearestEdgeCoordinate(timeSlot: TimeSlots, coordinate: GeoCoordinate): GeoCoordinate? {
+    fun getNearestEdgeCoordinate(timeSlot: TimeSlot, coordinate: GeoCoordinate): GeoCoordinate? {
         return getFirePolygon(timeSlot)?.getNearest(coordinate)
     }
 
@@ -238,7 +238,7 @@ class FireDataHandler {
      * @param coordinate the coordinate that needs to be checked if it is inside the nearest fire
      * @return the timeslot for the polygon of the nearest fire which the coordinate is found in
      */
-    fun checkInsideFire(coordinate:GeoCoordinate): TimeSlots? {
+    fun checkInsideFire(coordinate:GeoCoordinate): TimeSlot? {
         return fireData[nearestId]?.checkInsideFire(coordinate)
     }
 

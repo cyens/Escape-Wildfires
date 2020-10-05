@@ -65,6 +65,8 @@ class MapActivity : AppCompatActivity() {
 
     private val blockedRoads = ArrayList<GeoPolygon>()
 
+    private var correction: Int = 0
+
     /*
      * Listeners
      */
@@ -175,7 +177,7 @@ class MapActivity : AppCompatActivity() {
         ) {
             // If the route was calculated successfully
             // Display a message indicating route calculation failure
-            if (error == RoutingError.NONE){
+            if (error == RoutingError.NONE) {
                 if (routeResult != null) {
                     if (currentRoute != null) {
                         map?.removeMapObject(currentRoute!!)
@@ -201,6 +203,16 @@ class MapActivity : AppCompatActivity() {
                         "Error:route results returned is not valid",
                         Toast.LENGTH_LONG
                     ).show()
+                }
+            } else if (error == RoutingError.VIOLATES_OPTIONS) {
+                //This error is thrown when, for example, the only road available is a dead end and
+                //its direction is into the previous timeslot of the fire. A correction variable is
+                //set and the route generated again. This time however the previous timeslot will
+                //not be added to the banned areas, so a route can be calculated.
+                correction = 1
+                val position = positioningManager?.position?.coordinate
+                if (position != null) {
+                    turnByTurnButtonAction(position)
                 }
             } else {
                 Toast.makeText(
@@ -853,22 +865,34 @@ class MapActivity : AppCompatActivity() {
         val router = CoreRouter()
         val routePlan = RoutePlan()
         val fireHandler = FireDataHandler.instance.setNearest(start)
-        //check if the phone is currently within a fire
-        val timeSlot = fireHandler.checkInsideFire(start)
 
-        //if the timeSlot is not null, the phone is inside the fire and thus an extra waypoint will
-        //need to be added
-        var possibleWayPoint:GeoCoordinate? = null
-        if (timeSlot != null) {
-            possibleWayPoint = fireHandler.getNearestEdgeCoordinate(timeSlot, start)
+
+        //check if the phone is currently within a fire
+        var timeSlot = fireHandler.checkInsideFire(start)
+
+        //correction is used in case the only road available is a dead end and its direction is into
+        //the previous timeslot of the fire. Otherwise a violates options error is thrown, which will
+        //set the correction so the previous timeslot will not be added to the banned areas, so a
+        //route can be calculated.
+        if (timeSlot != null && correction > 0) {
+            timeSlot = TimeSlot.get(timeSlot.index - correction)
+            correction = 0
         }
+//TODO: create a better nearest edge coordinate function, the current version grabs the nearest node coordinate instead of also searching along the edge for a nearest coordinate
+//
+//        //if the timeSlot is not null, the phone is inside the fire and thus an extra waypoint will
+//        //need to be added
+//        var possibleWayPoint:GeoCoordinate? = null
+//        if (timeSlot != null) {
+//            possibleWayPoint = fireHandler.getNearestEdgeCoordinate(timeSlot, start)
+//        }
 
         //add waypoints to the routePlan
         routePlan.addWaypoint(RouteWaypoint(start))
-        if (possibleWayPoint != null) {
-            routePlan.addWaypoint(RouteWaypoint(possibleWayPoint))
-            setDestinationMarker(possibleWayPoint)
-        }
+//        if (possibleWayPoint != null) {
+//            routePlan.addWaypoint(RouteWaypoint(possibleWayPoint))
+//            setDestinationMarker(possibleWayPoint)
+//        }
         routePlan.addWaypoint(RouteWaypoint(end))
 
         //set the destination marker
