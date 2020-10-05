@@ -925,16 +925,24 @@ class MapActivity : AppCompatActivity() {
     private fun getDestination(position: GeoCoordinate): GeoCoordinate? {
         //grab the center of the fire
         val center = FireDataHandler.instance.setNearest(position).getBoundingBox()?.center
+        val fireBearing = getFireBearing()
 
         //calculate the destination coordinates, if the center of the fire is null, this will also be null
         return if (center != null) {
-            getDestinationCoordinatesFromBearing(
-                position, 10000.0, getBearing(
-                    center,
-                    position,
-                    getFireBearing()
+            if (fireBearing != null) {
+                getDestinationCoordinatesFromBearing(
+                    position, 10000.0, getBearing(
+                        center,
+                        position,
+                        fireBearing
+                    )
                 )
-            )
+            } else {
+                getDestinationCoordinatesFromBearing(
+                    position, 10000.0, center.getHeading(position)
+                )
+            }
+
         } else {
             null
         }
@@ -974,9 +982,9 @@ class MapActivity : AppCompatActivity() {
      *
      * @return the number of degrees that describes the heading of the fire
      */
-    private fun getFireBearing(): Double {
+    private fun getFireBearing(): Double? {
         //create the local variable
-        val bearing: Double
+        var bearing: Double? = null
         //get the polygons describing the fire
         val polygons = FireDataHandler.instance.getFirePolygons()
 
@@ -986,25 +994,28 @@ class MapActivity : AppCompatActivity() {
 
         //grab the coordinates from the center of the fire and store them in the Lists for all the time
         //frames except the current fire (so excluding NOW, but including the rest)
-        if (polygons != null) {
-            for (element in polygons) {
-                val tmp = element?.boundingBox?.center
+        if (polygons != null && polygons.size > 1) {
+            for (i in 1 until polygons.size) {
+                val tmp = polygons[i]?.boundingBox?.center
                 if (tmp != null) {
                     latCoords.add(tmp.latitude)
                     longCoords.add(tmp.longitude)
                 }
             }
+
+            //make sure not all the polygons were null
+            if (latCoords.size > 0 && longCoords.size > 0) {
+                //generate the average of the longitude and latitude
+                val lat = latCoords.average()
+                val lng = longCoords.average()
+
+                //get the coordinates for the center of the fire as it is at this moment
+                val nowCoords = polygons.get(0)?.boundingBox?.center
+
+                //calculate a bearing, 0.0 if not possible
+                bearing = nowCoords?.getHeading(GeoCoordinate(lat, lng))
+            }
         }
-
-        //generate the average of the longitude and latitude
-        val lat = latCoords.average()
-        val lng = longCoords.average()
-
-        //get the coordinates for the center of the fire as it is at this moment
-        val nowCoords = polygons?.get(0)?.boundingBox?.center
-
-        //calculate a bearing, 0.0 if not possible
-        bearing = nowCoords?.getHeading(GeoCoordinate(lat, lng)) ?: 0.0
 
         //return the bearing
         return bearing

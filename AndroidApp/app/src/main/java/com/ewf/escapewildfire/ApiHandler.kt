@@ -95,8 +95,10 @@ class ApiHandler(appContext: Context, workerParams: WorkerParameters):  Worker(a
                     }
                 }
             }
-            //add the data to the firedatahandler
-            FireDataHandler.instance.addFireData(FireData(featureCollection.etag,list))
+            //add the data to the firedatahandler if there is any
+            if (list.size > 0) {
+                FireDataHandler.instance.addFireData(FireData(featureCollection.etag,list))
+            }
         }
 
     /**
