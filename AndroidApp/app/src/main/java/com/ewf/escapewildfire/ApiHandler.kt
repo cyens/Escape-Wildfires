@@ -18,7 +18,7 @@ import org.json.JSONObject
 class ApiHandler(appContext: Context, workerParams: WorkerParameters):  Worker(appContext, workerParams){
     private val gson = GsonBuilder().create()
 
-    val authToken = "AKNrZWNxSlOv79naAXPDVgA"
+    val authToken = "{YOUR_BEARER_TOKEN}"
 
     /**
      * Listens to the result from the spaceRequest
