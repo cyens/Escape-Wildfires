@@ -776,22 +776,30 @@ class MapActivity : AppCompatActivity() {
             NavigationManager.NavigationState.IDLE -> {
                 //nothing has been done yet
                 if (currentRoute == null) {
-                    //route has to be calculated
-                    //generate a destination
-                    val destination = getDestination(position)
-                    //move the destination to the nearest town and subsequently (in the geocode listener)
-                    //have the route be calculated
-                    if (destination != null) {
-                        val request = ReverseGeocodeRequest(
-                            destination,
-                            ReverseGeocodeMode.RETRIEVE_ADDRESSES,
-                            0F
-                        )
-                        request.execute(reverseGeocodeListener)
+                    if (FireDataHandler.instance.firePresent()) {
+                        //route has to be calculated
+                        //generate a destination
+                        val destination = getDestination(position)
+                        //move the destination to the nearest town and subsequently (in the geocode listener)
+                        //have the route be calculated
+                        if (destination != null) {
+                            val request = ReverseGeocodeRequest(
+                                destination,
+                                ReverseGeocodeMode.RETRIEVE_ADDRESSES,
+                                0F
+                            )
+                            request.execute(reverseGeocodeListener)
+                        } else {
+                            Toast.makeText(
+                                applicationContext,
+                                "Could not generate a destination.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
                     } else {
                         Toast.makeText(
                             applicationContext,
-                            "Could not generate a destination.",
+                            "There is currently no fire in the system.",
                             Toast.LENGTH_LONG
                         ).show()
                     }
@@ -979,8 +987,8 @@ class MapActivity : AppCompatActivity() {
         //grab the coordinates from the center of the fire and store them in the Lists for all the time
         //frames except the current fire (so excluding NOW, but including the rest)
         if (polygons != null) {
-            for (i in 1 until polygons.size - 1) {
-                val tmp = polygons[i]?.boundingBox?.center
+            for (element in polygons) {
+                val tmp = element?.boundingBox?.center
                 if (tmp != null) {
                     latCoords.add(tmp.latitude)
                     longCoords.add(tmp.longitude)

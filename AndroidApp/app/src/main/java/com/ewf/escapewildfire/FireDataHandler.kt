@@ -242,6 +242,10 @@ class FireDataHandler {
         return fireData[nearestId]?.checkInsideFire(coordinate)
     }
 
+    fun firePresent(): Boolean {
+        return fireData.size > 0
+    }
+
     /**
      * giving the class a state of sorts, only having to instantiate it once and allowing other classes
      * the same FireDataGatherer object
